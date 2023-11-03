@@ -7,7 +7,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import DatePicker from "react-datepicker";
 import { AppEvent } from "../../../app/types/event";
 import {
-  Timestamp,
+  Timestamp, arrayUnion,
 } from "firebase/firestore";
 import { toast } from "react-toastify";
 import { useFireStore } from "../../../app/hooks/useFirestore";
@@ -16,6 +16,7 @@ import { actions } from "../eventSlice";
 import LoadingComponent from "../../../app/layout/LoadingComponent";
 
 export default function EventForm() {
+  const {currentUser} = useAppSelector(state => state.auth);
   const {loadDocument, create, update} = useFireStore('events');
   const {
     register,
@@ -50,11 +51,18 @@ export default function EventForm() {
   }
 
   async function createEvent(data: FieldValues) {
+    if (!currentUser) return;
     const ref = await create({
       ...data,
-      hostedBy: "bob",
-      attendees: [],
-      hostPhotoURL: "",
+      hostUid: currentUser.uid,
+      hostedBy: currentUser.displayName,
+      hostPhotoURL: currentUser.photoURL,
+      attendees: arrayUnion({
+        id: currentUser.uid,
+        displayName: currentUser.displayName,
+        photoURL: currentUser.photoURL
+      }),
+      attendeeIds: arrayUnion(currentUser.uid),
       date: Timestamp.fromDate(data.date as unknown as Date),
     });
     return ref;

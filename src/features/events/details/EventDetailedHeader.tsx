@@ -1,12 +1,20 @@
 import { Link } from "react-router-dom";
 import { Segment, Item, Header, Button, Image } from "semantic-ui-react";
 import { AppEvent } from "../../../app/types/event";
+import { useAppSelector } from "../../../app/store/store";
+import { useState } from "react";
+import { useFireStore } from "../../../app/hooks/useFirestore";
+import { toast } from "react-toastify";
+import { arrayRemove, arrayUnion } from "firebase/firestore";
 
 type Props = {
-  event: AppEvent
-}
+  event: AppEvent;
+};
 
-export default function EventDetailedHeader({event}: Props) {
+export default function EventDetailedHeader({ event }: Props) {
+  const { currentUser } = useAppSelector((state) => state.auth);
+  const [loading, setLoading] = useState(false);
+  const { update } = useFireStore("events");
   const eventImageStyle = {
     filter: "brightness(30%)",
   };
@@ -20,10 +28,40 @@ export default function EventDetailedHeader({event}: Props) {
     color: "white",
   };
 
+  async function toggleAttendance() {
+    if (!currentUser) {
+      toast.error("Must be logged in to do this");
+      return;
+    }
+    setLoading(true);
+    if (event.isGoing) {
+      const attendee = event.attendees.find((x) => x.id === currentUser.uid);
+      await update(event.id, {
+        attendees: arrayRemove(attendee),
+        attendeeIds: arrayRemove(currentUser.uid),
+      });
+      setLoading(false);
+    } else {
+      await update(event.id, {
+        attendees: arrayUnion({
+          id: currentUser.uid,
+          displayName: currentUser.displayName,
+          photoURL: currentUser.photoURL,
+        }),
+        attendeeIds: arrayUnion(currentUser.uid),
+      });
+      setLoading(false);
+    }
+  }
+
   return (
     <Segment.Group>
       <Segment basic attached="top" style={{ padding: "0" }}>
-        <Image src={`/categoryImages/${event.category}.jpg`} fluid style={eventImageStyle} />
+        <Image
+          src={`/categoryImages/${event.category}.jpg`}
+          fluid
+          style={eventImageStyle}
+        />
 
         <Segment basic style={eventImageTextStyle}>
           <Item.Group>
@@ -44,13 +82,24 @@ export default function EventDetailedHeader({event}: Props) {
         </Segment>
       </Segment>
 
-      <Segment attached="bottom">
-        <Button>Cancel My Place</Button>
-        <Button color="teal">JOIN THIS EVENT</Button>
-
-        <Button as={Link} to={`/manage/${event.id}`} color="orange" floated="right">
-          Manage Event
-        </Button>
+      <Segment attached="bottom" clearing>
+        {event.isHost ? (
+          <Button
+            as={Link}
+            to={`/manage/${event.id}`}
+            color="orange"
+            floated="right"
+          >
+            Manage Event
+          </Button>
+        ) : (
+          <Button
+            content={event.isGoing ? "Cancel my place" : "JOIN THIS EVENT"}
+            color={event.isGoing ? "grey" : "teal"}
+            onClick={toggleAttendance}
+            loading={loading}
+          />
+        )}
       </Segment>
     </Segment.Group>
   );
