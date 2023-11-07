@@ -15,32 +15,32 @@ function App() {
 
   useEffect(() => {
     onAuthStateChanged(auth, {
-      next: user => {
+      next: (user) => {
         if (user) {
-          dispatch(signIn(user))
+          dispatch(signIn(user));
         } else {
-          dispatch(logout())
+          dispatch(logout());
         }
       },
-      error: error => console.log(error),
-      complete: () => {}
-    })
-  }, [dispatch])
-
+      error: (error) => console.log(error),
+      complete: () => {},
+    });
+  }, [dispatch]);
 
   return (
     <>
-    {location.pathname === "/" ? <HomePage /> : (
-      <>
-      <ScrollRestoration />
-      <ModalManager />
-      <NavBar />
-      <Container className="main">
-        <Outlet />
-      </Container>
-    </>
-    )}
-      
+      {location.pathname === "/" ? (
+        <HomePage />
+      ) : (
+        <>
+          <ScrollRestoration />
+          <ModalManager />
+          <NavBar />
+          <Container className="main">
+            <Outlet />
+          </Container>
+        </>
+      )}
     </>
   );
 }
