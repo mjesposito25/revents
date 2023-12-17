@@ -31,6 +31,7 @@ export default function ProfileEvents({ profile }: Props) {
       { attribute: "date", operator: ">=", value: new Date() },
     ],
     sort: { attribute: "date", order: "asc" },
+    reset: true
   };
 
   const [options, setOptions] = useState<CollectionOptions>(initialOptions);
@@ -38,31 +39,34 @@ export default function ProfileEvents({ profile }: Props) {
   function handleSetQuery(tab: number) {
     let options: CollectionOptions = {} as CollectionOptions;
     switch (tab) {
-        case 1: // past events
-            options.queries = [
-                {
-                    attribute: "attendeeIds",
-                    operator: "array-contains",
-                    value: profile.id,
-                  },
-                  { attribute: "date", operator: "<", value: new Date() },
-            ],
-            options.sort = {attribute: 'date', order: 'desc'}
-            break;
-        case 2: // hosted
+      case 1: // past events
         options.queries = [
-            {
-                attribute: "hostUid",
-                operator: "==",
-                value: profile.id,
-              },
+          {
+            attribute: "attendeeIds",
+            operator: "array-contains",
+            value: profile.id,
+          },
+          { attribute: "date", operator: "<", value: new Date() },
         ],
-        options.sort = {attribute: 'date', order: 'asc'}
+          options.sort = { attribute: 'date', order: 'desc' }
+        options.reset = true;
         break;
-    
-        default:
-            options = initialOptions;
-            break;
+      case 2: // hosted
+        options.queries = [
+          {
+            attribute: "hostUid",
+            operator: "==",
+            value: profile.id,
+          },
+        ],
+          options.sort = { attribute: 'date', order: 'asc' }
+        options.reset = true;
+        break;
+
+      default:
+        options = initialOptions;
+        options.reset = true;
+        break;
     }
     setOptions(options);
   }
